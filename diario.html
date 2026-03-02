@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asturias · Data Viva</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      /* Paleta imagen marina */
+      --slate:    #8090A6;
+      --ocean:    #03658C;
+      --olive:    #8C8303;
+      --gold:     #D99E30;
+      /* Derivados */
+      --slate-dark:  #1a2533;
+      --slate-mid:   #4a5d72;
+      --ocean-dark:  #012033;
+      --ocean-light: #05a0db;
+      --gold-light:  #f0b93a;
+      --gold-pale:   #f5dfa0;
+      --cream:       #F2EDE0;
+      --ink:         #0d1820;
+      /* Alias legacy para no romper nada */
+      --cyan:    #05a0db;
+      --lime:    #c4b800;
+      --coral:   #c45a2a;
+      --amber:   #D99E30;
+      --white:   #F2EDE0;
+      --muted:   #8090A6;
+      --surface: #1a2533;
+      --deep:    #0d1f2e;
+      --abyss:   #0a1520;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ocean-dark);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── PARALLAX BG (solo desktop/tablet) ── */
+    #parallax-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url('https://as2.ftcdn.net/jpg/02/43/25/67/1000_F_243256746_hCKw6tCh0DpCe4h6qdeAxh3lmrZTtH6Q.jpg');
+      background-size: cover;
+      background-position: center 0;
+      will-change: transform;
+    }
+    #parallax-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(3,32,51,0.72) 0%,
+        rgba(3,101,140,0.45) 50%,
+        rgba(13,24,32,0.78) 100%
+      );
+    }
+    @media (max-width: 768px) {
+      #parallax-bg { display: none; }
+    }
+
+    /* ── MAIN PANEL FLOTANTE ── */
+    main {
+      position: relative; z-index: 2;
+      margin: 0 4vw;
+      background: rgba(128, 144, 166, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 80px rgba(3,32,51,0.7), 0 0 0 1px rgba(217,158,48,0.15);
+      min-height: 100vh;
+    }
+    @media (max-width: 768px) {
+      main { margin: 0; background: var(--slate-dark); backdrop-filter: none; }
+    }
+
+    /* ══ CURSOR ESTRELLA ══ */
+    #star-cursor {
+      position: fixed; z-index: 9999; pointer-events: none;
+      width: 24px; height: 24px;
+      transform: translate(-50%,-50%);
+    }
+    #star-trail-canvas {
+      position: fixed; inset:0; z-index: 9998; pointer-events: none;
+    }
+
+    /* ══ NAV NUEVO — lateral pill flotante ══ */
+    nav {
+      position: fixed; top: 50%; right: 2vw;
+      transform: translateY(-50%);
+      z-index: 600;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0;
+      background: rgba(13,24,32,0.85);
+      border: 1px solid rgba(217,158,48,0.35);
+      border-radius: 40px;
+      padding: 1.2rem .6rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 40px rgba(3,32,51,0.5);
+    }
+    .nav-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: .7rem; letter-spacing: .25em;
+      color: var(--gold); writing-mode: vertical-rl;
+      text-orientation: mixed; margin-bottom: 1.2rem;
+      opacity: .7;
+    }
+    .nav-links {
+      display: flex; flex-direction: column;
+      gap: .25rem; list-style: none;
+    }
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .5rem; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--slate); text-decoration: none;
+      padding: .5rem .55rem;
+      border-radius: 20px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transition: background .25s, color .25s, transform .2s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      background: var(--gold);
+      color: var(--ink);
+      transform: scale(1.1);
+    }
+    /* Punto indicador activo */
+    .nav-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--gold); opacity: 0;
+      margin: .2rem auto; transition: opacity .3s;
+    }
+    @media (max-width: 768px) {
+      nav {
+        top: auto; bottom: 0; right: 0; left: 0;
+        transform: none; flex-direction: row;
+        border-radius: 0; padding: .6rem 1rem;
+        justify-content: space-around;
+        border-top: 2px solid rgba(217,158,48,.4);
+        border-left:none; border-right:none; border-bottom:none;
+      }
+      .nav-brand { display: none; }
+      .nav-links { flex-direction: row; gap: 0; }
+      .nav-links a { writing-mode: horizontal-tb; font-size: .55rem; padding: .4rem .6rem; }
+      .nav-dot { display: none; }
+    }
+
+    /* ══ HERO ══ */
+    #hero {
+      position: relative; z-index: 2;
+      min-height: 100vh;
+      display: grid; grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 5rem 3rem 5rem; gap: 2rem; overflow: hidden;
+    }
+    .hero-bg-num {
+      position: absolute; right:-2rem; top:50%;
+      transform: translateY(-50%);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(12rem,22vw,22rem);
+      color: rgba(0,229,255,0.04);
+      line-height:1; pointer-events:none; user-select:none;
+    }
+    .hero-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; font-weight:700; letter-spacing: .3em; text-transform: uppercase;
+      color: var(--gold); display:flex; align-items:center; gap:.8rem; margin-bottom:1.5rem;
+    }
+    .hero-tag::before { content:''; width:30px; height:2px; background:var(--gold); }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem,9vw,8rem);
+      line-height:.95; letter-spacing:.02em; color:var(--white); margin-bottom:1.5rem;
+    }
+    h1 .c { color:var(--cyan); }
+    h1 .l { color:var(--lime); }
+    .hero-desc { font-size:1rem; color:var(--muted); max-width:44ch; line-height:1.6; margin-bottom:2.5rem; }
+    .hero-cta { display:flex; gap:1rem; flex-wrap:wrap; }
+    .btn {
+      font-family:'JetBrains Mono',monospace;
+      font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+      padding:.9rem 1.8rem; text-decoration:none; transition:all .2s; cursor:none; border:2px solid;
+    }
+    .btn-cyan { background:var(--cyan); color:var(--ocean); border-color:var(--cyan); }
+    .btn-cyan:hover { background:transparent; color:var(--cyan); }
+    .btn-lime { background:transparent; color:var(--lime); border-color:var(--lime); }
+    .btn-lime:hover { background:var(--lime); color:var(--ocean); }
+
+    .hero-stats {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:2px; background:rgba(217,158,48,0.12);
+      border:2px solid rgba(217,158,48,0.3);
+    }
+    .hstat {
+      background:var(--ocean); padding:1.5rem;
+      transition:background .2s, transform .2s; cursor:none;
+    }
+    .hstat:hover { background:var(--gold); transform:scale(1.02); }
+    .hstat:hover .hstat-num,.hstat:hover .hstat-lbl { color:var(--ocean); }
+    .hstat-num {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:3.5rem; line-height:1; color:var(--gold); transition:color .2s;
+    }
+    .hstat-lbl {
+      font-family:'JetBrains Mono',monospace;
+      font-size:.55rem; letter-spacing:.15em; text-transform:uppercase;
+      color:var(--muted); margin-top:.3rem; transition:color .2s;
+    }
+
+    /* ══ SECCIONES ══ */
+    section {
+      position: relative; z-index: 2;
+      padding: 5rem 3rem;
+      border-top: 3px solid transparent;
+    }
+    /* Borders de acento rotando por la paleta */
+    section:nth-child(1) { border-top-color: var(--gold); }
+    section:nth-child(2) { border-top-color: var(--ocean); }
+    section:nth-child(3) { border-top-color: var(--olive); }
+    section:nth-child(4) { border-top-color: var(--gold); }
+    section:nth-child(5) { border-top-color: var(--ocean); }
+    section:nth-child(6) { border-top-color: var(--olive); }
+    section:nth-child(7) { border-top-color: var(--gold); }
+    /* Separador interno visible */
+    section::before {
+      content: '';
+      display: block;
+      position: absolute; top: -1px; left: 3rem; right: 3rem; height: 1px;
+      background: rgba(217,158,48,0.1);
+    }
+    section:nth-child(even) { background: rgba(13,24,32,0.25); }
+
+    .sec-header {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:2rem; margin-bottom:3rem; flex-wrap:wrap;
+    }
+    .sec-tag {
+      font-family:'JetBrains Mono',monospace;
+      font-size:.6rem; font-weight:700; letter-spacing:.25em; text-transform:uppercase;
+      color:var(--gold); margin-bottom:.4rem;
+    }
+    h2 {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(2.5rem,5vw,4.5rem);
+      line-height:.95; color:var(--white); letter-spacing:.02em;
+    }
+    h2 .c{color:var(--cyan);} h2 .l{color:var(--lime);}
+    h2 .r{color:var(--coral);} h2 .a{color:var(--amber);}
+    .sec-source {
+      font-family:'JetBrains Mono',monospace;
+      font-size:.55rem; letter-spacing:.1em;
+      color:var(--muted); text-align:right; line-height:1.7;
+      align-self:flex-end;
+    }
+
+    /* ══ REVEAL ══ */
+    .reveal { opacity:0; transform:translateY(20px); transition:opacity .7s, transform .7s; }
+    .reveal.on { opacity:1; transform:translateY(0); }
+
+    /* ══ 1. LLUVIA ══ */
+    .rain-layout { display:grid; grid-template-columns:1fr 1fr; gap:3rem; }
+    .bar-chart { display:flex; flex-direction:column; gap:.4rem; }
+    .bar-row {
+      display:grid; grid-template-columns:50px 1fr 55px;
+      align-items:center; gap:.8rem; padding:.4rem;
+      transition:background .2s; cursor:none;
+    }
+    .bar-row:hover { background:rgba(0,229,255,0.05); }
+    .bar-row:hover .bar-fill { filter:brightness(1.4); }
+    .bar-lbl { font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; color:var(--muted); text-align:right; }
+    .bar-track { height:8px; background:rgba(0,229,255,0.08); overflow:hidden; }
+    .bar-fill { height:100%; width:0; background:linear-gradient(90deg,var(--ocean),var(--gold)); transition:width 1s cubic-bezier(.4,0,.2,1),filter .2s; }
+    .bar-val { font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; color:var(--cyan); }
+
+    .rain-facts { display:flex; flex-direction:column; gap:1px; }
+    .rfact {
+      background:var(--surface); padding:1.5rem;
+      border-left:4px solid var(--cyan);
+      transition:border-color .2s,background .2s,transform .2s; cursor:none;
+    }
+    .rfact:hover { background:var(--gold); transform:translateX(8px); }
+    .rfact:hover .rfact-num,.rfact:hover .rfact-lbl,.rfact:hover .rfact-body { color:var(--ocean) !important; }
+    .rfact-num { font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--gold); line-height:1; transition:color .2s; }
+    .rfact-lbl { font-family:'JetBrains Mono',monospace; font-size:.58rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:.2rem; transition:color .2s; }
+    .rfact-body { font-size:.9rem; color:rgba(240,248,255,.6); margin-top:.4rem; transition:color .2s; }
+
+    /* ══ 2. TEMP ══ */
+    .temp-wrap { overflow-x:auto; }
+    #tempChart { display:block; width:100%; min-width:600px; height:300px; }
+    .temp-legend { display:flex; gap:2rem; margin-top:1rem; flex-wrap:wrap; }
+    .leg { display:flex; align-items:center; gap:.5rem; font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .leg-dot { width:12px; height:12px; }
+
+    /* ══ 3. BIO ══ */
+    .bio-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:rgba(0,229,255,0.08); }
+    .bio-cell {
+      background:var(--ocean); padding:1.8rem 1.5rem;
+      position:relative; overflow:hidden;
+      transition:background .25s; cursor:none;
+    }
+    .bio-cell::after {
+      content:attr(data-num); position:absolute; right:-10px; bottom:-20px;
+      font-family:'Bebas Neue',sans-serif; font-size:6rem;
+      color:rgba(0,229,255,0.04); line-height:1; pointer-events:none;
+      transition:color .25s,transform .25s;
+    }
+    .bio-cell:hover { background:var(--deep); }
+    .bio-cell:hover::after { color:rgba(0,229,255,0.1); transform:scale(1.1); }
+    .bio-icon { font-size:2rem; margin-bottom:.8rem; display:block; }
+    .bio-name { font-family:'DM Sans',sans-serif; font-weight:700; font-size:1rem; color:var(--white); margin-bottom:.2rem; }
+    .bio-sci { font-family:'JetBrains Mono',monospace; font-size:.55rem; color:var(--muted); margin-bottom:.6rem; }
+    .badge { font-family:'JetBrains Mono',monospace; font-size:.52rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .6rem; display:inline-block; }
+    .badge-en { background:var(--coral); color:#fff; }
+    .badge-vu { background:var(--amber); color:var(--ocean); }
+    .badge-lc { background:var(--lime); color:var(--ocean); }
+    .bio-desc { font-size:.85rem; color:var(--muted); margin-top:.6rem; line-height:1.5; }
+
+    .bio-donut-row { display:grid; grid-template-columns:260px 1fr; gap:3rem; align-items:center; margin-top:2rem; }
+    #bioDonut { display:block; }
+    .donut-items { display:flex; flex-direction:column; gap:1.2rem; }
+    .donut-item { display:grid; grid-template-columns:110px 1fr 50px; align-items:center; gap:.8rem; }
+    .d-lbl { font-family:'JetBrains Mono',monospace; font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    .d-track { height:6px; background:rgba(240,248,255,0.08); overflow:hidden; }
+    .d-fill { height:100%; width:0; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+    .d-val { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; text-align:right; line-height:1; }
+
+    /* ══ 4. AIRE ══ */
+    .aire-layout { display:grid; grid-template-columns:1fr 1.2fr; gap:4rem; align-items:start; }
+    .gauge-box { display:flex; flex-direction:column; align-items:center; gap:1rem; }
+    .gauge-big { font-family:'Bebas Neue',sans-serif; font-size:5rem; color:var(--lime); line-height:1; }
+    .gauge-sub { font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+    .co2-list { display:flex; flex-direction:column; gap:.6rem; }
+    .co2-row { display:grid; grid-template-columns:55px 1fr 65px; align-items:center; gap:.8rem; padding:.5rem; transition:background .2s; cursor:none; }
+    .co2-row:hover { background:rgba(0,229,255,0.05); }
+    .co2-yr { font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; color:var(--muted); }
+    .co2-track { height:6px; background:rgba(240,248,255,0.08); overflow:hidden; }
+    .co2-fill { height:100%; width:0; transition:width 1.2s; }
+    .co2-val { font-family:'JetBrains Mono',monospace; font-size:.6rem; font-weight:700; text-align:right; }
+
+    /* ══ 5. MAR ══ */
+    .mar-layout { display:grid; grid-template-columns:1.3fr 1fr; gap:4rem; align-items:center; }
+    #marChart { display:block; width:100%; }
+    .mar-facts { display:flex; flex-direction:column; gap:1px; }
+    .mar-fact {
+      background:var(--surface); padding:1.5rem;
+      border-top:3px solid transparent;
+      transition:border-color .25s,transform .25s,background .25s; cursor:none;
+    }
+    .mar-fact:hover { border-color:var(--cyan); transform:translateY(-4px); background:var(--deep); }
+    .mar-num { font-family:'Bebas Neue',sans-serif; font-size:3.5rem; color:var(--cyan); line-height:1; }
+    .mar-lbl { font-family:'JetBrains Mono',monospace; font-size:.58rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .mar-body { font-size:.88rem; color:rgba(240,248,255,.55); margin-top:.4rem; }
+
+    /* ══ 6. INCENDIOS ══ */
+    .fire-layout { display:grid; grid-template-columns:1.2fr 1fr; gap:4rem; align-items:start; }
+    #fireChart { display:block; width:100%; }
+    .fire-facts { display:flex; flex-direction:column; gap:1px; }
+    .fire-fact {
+      background:var(--surface); padding:1.5rem;
+      border-left:4px solid var(--coral);
+      transition:background .25s,transform .25s; cursor:none;
+    }
+    .fire-fact:hover { background:var(--coral); transform:translateX(6px); }
+    .fire-fact:hover .fire-num,.fire-fact:hover .fire-lbl,.fire-fact:hover .fire-body { color:var(--ocean) !important; }
+    .fire-num { font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--coral); line-height:1; transition:color .2s; }
+    .fire-lbl { font-family:'JetBrains Mono',monospace; font-size:.58rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); transition:color .2s; }
+    .fire-body { font-size:.88rem; color:rgba(240,248,255,.55); margin-top:.4rem; transition:color .2s; }
+
+    /* ══ FOOTER ══ */
+    footer {
+      position:relative; z-index:2;
+      background: rgba(13,24,32,0.6);
+      border-top:3px solid var(--gold);
+      padding:2rem 3rem;
+      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;
+      font-family:'JetBrains Mono',monospace; font-size:.55rem; font-weight:700;
+      letter-spacing:.15em; text-transform:uppercase; color:var(--slate);
+    }
+    footer span:first-child { color:var(--gold); }
+
+    /* ══ RESPONSIVE ══ */
+    @media(max-width:900px){
+      #hero{grid-template-columns:1fr;}
+      .rain-layout,.aire-layout,.mar-layout,.fire-layout{grid-template-columns:1fr;}
+      .bio-grid{grid-template-columns:1fr 1fr;}
+      .bio-donut-row{grid-template-columns:1fr;}
+      section{padding:4rem 1.5rem;}
+      nav{padding:.7rem 1.5rem;}
+    }
+    @media(max-width:560px){
+      .bio-grid{grid-template-columns:1fr;}
+      .nav-links{display:none;}
+      h1{font-size:clamp(3rem,12vw,5rem);}
+      footer{flex-direction:column;text-align:center;}
+      .sec-header{flex-direction:column;}
+      .sec-source{text-align:left;}
+    }
+    @media(max-height:500px) and (orientation:landscape){
+      #hero{min-height:auto;padding:5rem 2rem 2rem;}
+      .hero-bg-num{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="parallax-bg"></div>
+
+<div id="star-cursor">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2Z" fill="#00E5FF" opacity=".95"/>
+    <path d="M12 5L13 10.5L19.5 12L13 13.5L12 19L11 13.5L4.5 12L11 10.5Z" fill="#AAFFFF" opacity=".5"/>
+  </svg>
+</div>
+<canvas id="star-trail-canvas"></canvas>
+
+<nav>
+  <span class="nav-brand">DATA&nbsp;VIVA</span>
+  <ul class="nav-links">
+    <li><a href="#lluvia">Lluvia</a></li>
+    <li><a href="#temperatura">Temp</a></li>
+    <li><a href="#biodiversidad">Bio</a></li>
+    <li><a href="#aire">Aire</a></li>
+    <li><a href="#mar">Mar</a></li>
+    <li><a href="#incendios">Fuego</a></li>
+  </ul>
+</nav>
+
+<main>
+<section id="hero">
+  <div>
+    <p class="hero-tag">Registro ambiental · 2024</p>
+    <h1>EL<br><span class="c">VERDE</span><br>QUE<br><span class="l">HABLA</span></h1>
+    <p class="hero-desc">Seis capítulos de datos reales sobre el ecosistema más húmedo de España. Asturias en números.</p>
+    <div class="hero-cta">
+      <a href="#lluvia" class="btn btn-cyan">Explorar datos</a>
+      <a href="#biodiversidad" class="btn btn-lime">Ver biodiversidad</a>
+    </div>
+  </div>
+  <div>
+    <div class="hero-stats reveal">
+      <div class="hstat"><div class="hstat-num">1.100<span style="font-size:1.8rem">mm</span></div><div class="hstat-lbl">lluvia anual media</div></div>
+      <div class="hstat"><div class="hstat-num">14.2<span style="font-size:1.8rem">°C</span></div><div class="hstat-lbl">temperatura media</div></div>
+      <div class="hstat"><div class="hstat-num">3.320</div><div class="hstat-lbl">especies catalogadas</div></div>
+      <div class="hstat"><div class="hstat-num">–34<span style="font-size:1.8rem">%</span></div><div class="hstat-lbl">bosque autóctono perdido</div></div>
+    </div>
+  </div>
+  <div class="hero-bg-num">AS</div>
+</section>
+
+<section id="lluvia">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">01 — Precipitaciones</p><h2>LLUVIA<br><span class="c">& AGUA</span></h2></div>
+    <p class="sec-source">AEMET · Promedio 1991–2020<br>Estación Oviedo · Asturias</p>
+  </div>
+  <div class="rain-layout reveal">
+    <div class="bar-chart" id="rainBars"></div>
+    <div class="rain-facts">
+      <div class="rfact"><div class="rfact-num">1.089mm</div><div class="rfact-lbl">Precipitación anual media</div><div class="rfact-body">La región más lluviosa de España peninsular. Más de 150 días de lluvia al año.</div></div>
+      <div class="rfact"><div class="rfact-num">Octubre</div><div class="rfact-lbl">Mes más lluvioso</div><div class="rfact-body">Vientos atlánticos que descargan sobre la Cordillera Cantábrica.</div></div>
+      <div class="rfact"><div class="rfact-num">+12%</div><div class="rfact-lbl">Variabilidad última década</div><div class="rfact-body">Episodios más intensos y breves, con sequías más largas entre ellos.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="temperatura">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">02 — Temperatura</p><h2>CALOR<br><span class="a">& FRÍO</span></h2></div>
+    <p class="sec-source">Media mensual 1991–2020<br>Gijón · costa cantábrica</p>
+  </div>
+  <div class="reveal">
+    <div class="temp-wrap"><canvas id="tempChart"></canvas></div>
+    <div class="temp-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--coral)"></div>Máxima media</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>Media</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--cyan)"></div>Mínima media</div>
+    </div>
+  </div>
+</section>
+
+<section id="biodiversidad">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">03 — Biodiversidad</p><h2>VIDA<br><span class="l">SALVAJE</span></h2></div>
+    <p class="sec-source">CSIC · GBIF<br>Catálogo Asturiano 2023</p>
+  </div>
+  <div class="bio-grid reveal">
+    <div class="bio-cell" data-num="01"><span class="bio-icon">🐺</span><div class="bio-name">Lobo ibérico</div><div class="bio-sci">Canis lupus signatus</div><span class="badge badge-vu">Vulnerable</span><p class="bio-desc">~60 ejemplares en Asturias. Protegido en toda España desde 2021.</p></div>
+    <div class="bio-cell" data-num="02"><span class="bio-icon">🦅</span><div class="bio-name">Urogallo cantábrico</div><div class="bio-sci">Tetrao urogallus cantabricus</div><span class="badge badge-en">Peligro crítico</span><p class="bio-desc">Menos de 300 ejemplares. El ave más amenazada de España.</p></div>
+    <div class="bio-cell" data-num="03"><span class="bio-icon">🐻</span><div class="bio-name">Oso pardo cantábrico</div><div class="bio-sci">Ursus arctos arctos</div><span class="badge badge-vu">Vulnerable</span><p class="bio-desc">De 70 a más de 350 ejemplares en 20 años. Caso de éxito.</p></div>
+    <div class="bio-cell" data-num="04"><span class="bio-icon">🦦</span><div class="bio-name">Nutria europea</div><div class="bio-sci">Lutra lutra</div><span class="badge badge-lc">Preoc. menor</span><p class="bio-desc">Indicador clave de calidad fluvial. Presente en casi todos los ríos.</p></div>
+    <div class="bio-cell" data-num="05"><span class="bio-icon">🌿</span><div class="bio-name">Tejo milenario</div><div class="bio-sci">Taxus baccata</div><span class="badge badge-vu">Vulnerable</span><p class="bio-desc">Árbol sagrado asturiano. Algunos ejemplares superan 2.000 años.</p></div>
+    <div class="bio-cell" data-num="06"><span class="bio-icon">🐟</span><div class="bio-name">Salmón atlántico</div><div class="bio-sci">Salmo salar</div><span class="badge badge-en">En peligro</span><p class="bio-desc">Capturas caídas un 80% en 30 años en el Nalón y el Sella.</p></div>
+  </div>
+  <div class="bio-donut-row reveal">
+    <canvas id="bioDonut" width="260" height="260"></canvas>
+    <div class="donut-items" id="donutItems"></div>
+  </div>
+</section>
+
+<section id="aire">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">04 — Calidad del aire</p><h2>AIRE<br><span class="l">& CO₂</span></h2></div>
+    <p class="sec-source">Red vigilancia Gobierno Asturias<br>Media anual 2023</p>
+  </div>
+  <div class="aire-layout reveal">
+    <div class="gauge-box">
+      <canvas id="aireGauge" width="280" height="180"></canvas>
+      <div><div class="gauge-big">42</div><div class="gauge-sub">ICA · Índice calidad del aire · Bueno</div></div>
+    </div>
+    <div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Emisiones CO₂ en Asturias (Mt/año)</p>
+      <div class="co2-list" id="co2List"></div>
+    </div>
+  </div>
+</section>
+
+<section id="mar">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">05 — Nivel del mar</p><h2>MAR<br><span class="c">CANTÁBRICO</span></h2></div>
+    <p class="sec-source">Mareógrafo Gijón · IEO<br>Serie histórica 1943–2023</p>
+  </div>
+  <div class="mar-layout reveal">
+    <canvas id="marChart" height="300"></canvas>
+    <div class="mar-facts">
+      <div class="mar-fact"><div class="mar-num">+15cm</div><div class="mar-lbl">subida desde 1943</div><div class="mar-body">El Cantábrico ha subido 15cm en 80 años. La mitad en los últimos 30.</div></div>
+      <div class="mar-fact"><div class="mar-num">+2.1mm/año</div><div class="mar-lbl">ritmo actual</div><div class="mar-body">En los 90 era 1.3mm/año. Hoy supera los 2mm anuales.</div></div>
+      <div class="mar-fact"><div class="mar-num">14 playas</div><div class="mar-lbl">con retroceso significativo</div><div class="mar-body">Algunas han perdido más de 15 metros de arena en dos décadas.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="incendios">
+  <div class="sec-header reveal">
+    <div><p class="sec-tag">06 — Incendios</p><h2>FUEGO<br><span class="r">& DEFORESTACIÓN</span></h2></div>
+    <p class="sec-source">SEPRONA · COAG<br>Datos anuales 2015–2023</p>
+  </div>
+  <div class="fire-layout reveal">
+    <canvas id="fireChart" height="300"></canvas>
+    <div class="fire-facts">
+      <div class="fire-fact"><div class="fire-num">2.847</div><div class="fire-lbl">incendios en 2022</div><div class="fire-body">El año más duro. El 95% intencionados o por negligencia.</div></div>
+      <div class="fire-fact"><div class="fire-num">18.400ha</div><div class="fire-lbl">superficie quemada en 2022</div><div class="fire-body">25.000 campos de fútbol. La recuperación natural tarda entre 20 y 80 años.</div></div>
+      <div class="fire-fact"><div class="fire-num">–34%</div><div class="fire-lbl">menos bosque autóctono</div><div class="fire-body">El eucalipto, invasor e inflamable, ha sustituido al roble y al castaño.</div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>Asturias · Data Viva · 2024</span>
+  <span>Datos: AEMET · IEO · CSIC · Gobierno del Principado</span>
+  <span>Nickita Toshiba</span>
+</footer>
+
+<script>
+// ══ PARALLAX SUAVE ══
+const parallaxBg = document.getElementById('parallax-bg');
+if (parallaxBg && window.innerWidth > 768) {
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY * 0.35; // 0.35 = suave
+    parallaxBg.style.transform = `translateY(${y}px)`;
+  }, { passive: true });
+}
+
+// ══ CURSOR ESTRELLA + ESTELA ══
+const starEl = document.getElementById('star-cursor');
+const trailC = document.getElementById('star-trail-canvas');
+const tctx   = trailC.getContext('2d');
+let mx=0,my=0,trail=[];
+
+function resizeTrail(){trailC.width=window.innerWidth;trailC.height=window.innerHeight;}
+resizeTrail(); window.addEventListener('resize',resizeTrail);
+
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  starEl.style.left=mx+'px'; starEl.style.top=my+'px';
+  trail.push({x:mx,y:my,r:4+Math.random()*3});
+  if(trail.length>30) trail.shift();
+});
+
+(function animTrail(){
+  tctx.clearRect(0,0,trailC.width,trailC.height);
+  trail.forEach((p,i)=>{
+    const t=i/trail.length;
+    tctx.save();
+    tctx.translate(p.x,p.y);
+    tctx.rotate(Date.now()*.001+i*.3);
+    tctx.globalAlpha=t*.55;
+    tctx.beginPath();
+    const outer=p.r*t, inner=outer*.38;
+    for(let j=0;j<8;j++){
+      const a=(j*Math.PI)/4-Math.PI/2;
+      const r=j%2===0?outer:inner;
+      j===0?tctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):tctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    }
+    tctx.closePath();
+    tctx.fillStyle=t>.55?'#00E5FF':'#AAFF00';
+    tctx.fill();
+    tctx.restore();
+  });
+  requestAnimationFrame(animTrail);
+})();
+
+// ══ REVEAL ══
+const revEls=document.querySelectorAll('.reveal');
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    e.target.classList.add('on');
+    e.target.querySelectorAll('.bar-fill').forEach((b,i)=>setTimeout(()=>{b.style.width=b.dataset.w;},i*60));
+    e.target.querySelectorAll('.co2-fill').forEach((b,i)=>setTimeout(()=>{b.style.width=b.dataset.w;},i*80));
+    e.target.querySelectorAll('.d-fill').forEach((b,i)=>setTimeout(()=>{b.style.width=b.dataset.w;},i*100));
+    revObs.unobserve(e.target);
+  });
+},{threshold:.1});
+revEls.forEach(el=>revObs.observe(el));
+document.querySelectorAll('#hero .reveal').forEach((el,i)=>setTimeout(()=>el.classList.add('on'),150+i*120));
+
+// ══ 1. LLUVIA ══
+const rainD=[{m:'Ene',v:108},{m:'Feb',v:94},{m:'Mar',v:88},{m:'Abr',v:96},{m:'May',v:82},{m:'Jun',v:58},{m:'Jul',v:42},{m:'Ago',v:48},{m:'Sep',v:72},{m:'Oct',v:124},{m:'Nov',v:118},{m:'Dic',v:107}];
+const maxR=Math.max(...rainD.map(d=>d.v));
+const rCont=document.getElementById('rainBars');
+rainD.forEach(d=>{
+  const pct=(d.v/maxR*100).toFixed(1);
+  rCont.innerHTML+=`<div class="bar-row"><span class="bar-lbl">${d.m}</span><div class="bar-track"><div class="bar-fill" data-w="${pct}%" style="width:0"></div></div><span class="bar-val">${d.v}mm</span></div>`;
+});
+
+// ══ 2. TEMPERATURA ══
+const tcv=document.getElementById('tempChart'),tc=tcv.getContext('2d');
+const meses=['E','F','M','A','M','J','J','A','S','O','N','D'];
+const tMax=[12,12,14,16,18,21,23,24,22,18,14,12];
+const tMed=[9,9,11,13,15,18,20,20,18,15,11,9];
+const tMin=[5,5,7,9,11,14,16,16,14,11,7,5];
+
+function drawTemp(){
+  const W=tcv.offsetWidth||700; tcv.width=W; tcv.height=300;
+  const H=300,pad={t:20,r:20,b:40,l:44};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const xP=i=>pad.l+(i/(meses.length-1))*cW;
+  const yP=v=>pad.t+cH-(v/28)*cH;
+  tc.clearRect(0,0,W,H);
+  [0,7,14,21,28].forEach(v=>{
+    const y=yP(v);
+    tc.beginPath();tc.moveTo(pad.l,y);tc.lineTo(W-pad.r,y);
+    tc.strokeStyle='rgba(0,229,255,0.08)';tc.lineWidth=1;tc.stroke();
+    tc.fillStyle='rgba(74,122,155,0.8)';tc.font='10px JetBrains Mono,monospace';
+    tc.textAlign='right';tc.fillText(v+'°',pad.l-6,y+4);
+  });
+  tc.beginPath();
+  tMax.forEach((v,i)=>i===0?tc.moveTo(xP(i),yP(v)):tc.lineTo(xP(i),yP(v)));
+  for(let i=tMin.length-1;i>=0;i--)tc.lineTo(xP(i),yP(tMin[i]));
+  tc.closePath();
+  const ag=tc.createLinearGradient(0,0,0,H);
+  ag.addColorStop(0,'rgba(0,229,255,0.1)');ag.addColorStop(1,'rgba(0,229,255,0.02)');
+  tc.fillStyle=ag;tc.fill();
+  function line(data,color,dash=[]){
+    tc.beginPath();data.forEach((v,i)=>i===0?tc.moveTo(xP(i),yP(v)):tc.lineTo(xP(i),yP(v)));
+    tc.strokeStyle=color;tc.lineWidth=2.5;tc.setLineDash(dash);tc.lineJoin='round';tc.stroke();tc.setLineDash([]);
+    data.forEach((v,i)=>{tc.beginPath();tc.arc(xP(i),yP(v),4,0,Math.PI*2);tc.fillStyle=color;tc.fill();});
+  }
+  line(tMax,'rgba(255,77,77,.9)');
+  line(tMed,'rgba(255,184,0,.9)',[6,3]);
+  line(tMin,'rgba(0,229,255,.9)');
+  meses.forEach((m,i)=>{tc.fillStyle='rgba(74,122,155,0.8)';tc.font='10px JetBrains Mono,monospace';tc.textAlign='center';tc.fillText(m,xP(i),H-8);});
+}
+drawTemp(); window.addEventListener('resize',drawTemp);
+
+// ══ 3. DONUT BIO ══
+const bioD=[{l:'Plantas',v:1840,c:'#AAFF00'},{l:'Vertebrados',v:480,c:'#00E5FF'},{l:'Insectos',v:620,c:'#FFB800'},{l:'Hongos',v:380,c:'#FF4D4D'}];
+const bioTotal=bioD.reduce((s,d)=>s+d.v,0);
+const bioC=document.getElementById('bioDonut'),bctx=bioC.getContext('2d');
+let sa=-Math.PI/2;
+bioD.forEach(d=>{
+  const sl=(d.v/bioTotal)*Math.PI*2;
+  bctx.beginPath();bctx.arc(130,130,110,sa,sa+sl);bctx.arc(130,130,65,sa+sl,sa,true);bctx.closePath();
+  bctx.fillStyle=d.c+'33';bctx.strokeStyle=d.c;bctx.lineWidth=2;bctx.fill();bctx.stroke();sa+=sl;
+});
+bctx.fillStyle='rgba(240,248,255,.95)';bctx.font='bold 32px Bebas Neue,sans-serif';bctx.textAlign='center';bctx.fillText('3.320',130,128);
+bctx.fillStyle='rgba(74,122,155,.9)';bctx.font='700 10px JetBrains Mono,monospace';bctx.fillText('ESPECIES',130,148);
+const dItems=document.getElementById('donutItems');
+bioD.forEach(d=>{
+  const pct=((d.v/bioTotal)*100).toFixed(0);
+  dItems.innerHTML+=`<div class="donut-item"><span class="d-lbl" style="color:${d.c}">${d.l}</span><div class="d-track"><div class="d-fill" data-w="${pct}%" style="background:${d.c};width:0"></div></div><span class="d-val" style="color:${d.c}">${d.v}</span></div>`;
+});
+
+// ══ 4. GAUGE AIRE ══
+const gc=document.getElementById('aireGauge'),gctx=gc.getContext('2d');
+[{c:'#AAFF00',l:'Bueno'},{c:'#FFB800',l:'Mod.'},{c:'#FF8C00',l:'Malo'},{c:'#FF4D4D',l:'M.malo'},{c:'#9B0000',l:'Peligro'}].forEach((s,i)=>{
+  const sa2=Math.PI+(i/5)*Math.PI,ea=Math.PI+((i+1)/5)*Math.PI;
+  gctx.beginPath();gctx.arc(140,155,110,sa2,ea);gctx.arc(140,155,88,ea,sa2,true);gctx.closePath();
+  gctx.fillStyle=s.c+'55';gctx.strokeStyle=s.c;gctx.lineWidth=1.5;gctx.fill();gctx.stroke();
+  const ma=sa2+(ea-sa2)/2;
+  gctx.fillStyle='rgba(240,248,255,.5)';gctx.font='9px JetBrains Mono,monospace';gctx.textAlign='center';
+  gctx.fillText(s.l,140+Math.cos(ma)*100,155+Math.sin(ma)*100);
+});
+const na=Math.PI+(42/200)*Math.PI;
+gctx.beginPath();gctx.moveTo(140,155);gctx.lineTo(140+Math.cos(na)*95,155+Math.sin(na)*95);
+gctx.strokeStyle='#AAFF00';gctx.lineWidth=3;gctx.lineCap='round';gctx.stroke();
+gctx.beginPath();gctx.arc(140,155,7,0,Math.PI*2);gctx.fillStyle='#AAFF00';gctx.fill();
+
+const co2D=[{y:'2000',v:28},{y:'2005',v:26},{y:'2010',v:22},{y:'2015',v:18},{y:'2020',v:14},{y:'2023',v:11}];
+const co2L=document.getElementById('co2List');
+co2D.forEach(d=>{
+  const pct=((d.v/28)*100).toFixed(0);
+  const col=d.v>20?'var(--coral)':d.v>14?'var(--amber)':'var(--lime)';
+  co2L.innerHTML+=`<div class="co2-row"><span class="co2-yr">${d.y}</span><div class="co2-track"><div class="co2-fill" data-w="${pct}%" style="background:${col};width:0"></div></div><span class="co2-val" style="color:${col}">${d.v}Mt</span></div>`;
+});
+
+// ══ 5. MAR ══
+const marC=document.getElementById('marChart'),mctx2=marC.getContext('2d');
+const marYrs=[1943,1955,1965,1975,1985,1995,2005,2015,2023];
+const marV=[0,1.2,2.5,4.1,5.8,7.4,9.8,12.4,15.0];
+function drawMar(){
+  const W=marC.offsetWidth||500;marC.width=W;marC.height=300;
+  const H=300,pad={t:20,r:20,b:40,l:52};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const xP=i=>pad.l+(i/(marYrs.length-1))*cW;
+  const yP=v=>pad.t+cH-(v/16)*cH;
+  mctx2.clearRect(0,0,W,H);
+  [0,4,8,12,16].forEach(v=>{
+    const y=yP(v);
+    mctx2.beginPath();mctx2.moveTo(pad.l,y);mctx2.lineTo(W-pad.r,y);
+    mctx2.strokeStyle='rgba(0,229,255,0.08)';mctx2.lineWidth=1;mctx2.stroke();
+    mctx2.fillStyle='rgba(74,122,155,.7)';mctx2.font='10px JetBrains Mono,monospace';
+    mctx2.textAlign='right';mctx2.fillText('+'+v+'cm',pad.l-5,y+4);
+  });
+  mctx2.beginPath();
+  marV.forEach((v,i)=>i===0?mctx2.moveTo(xP(i),yP(v)):mctx2.lineTo(xP(i),yP(v)));
+  mctx2.lineTo(xP(marV.length-1),H-pad.b);mctx2.lineTo(xP(0),H-pad.b);mctx2.closePath();
+  const sg=mctx2.createLinearGradient(0,pad.t,0,H-pad.b);
+  sg.addColorStop(0,'rgba(0,229,255,.25)');sg.addColorStop(1,'rgba(0,229,255,.02)');
+  mctx2.fillStyle=sg;mctx2.fill();
+  mctx2.beginPath();
+  marV.forEach((v,i)=>i===0?mctx2.moveTo(xP(i),yP(v)):mctx2.lineTo(xP(i),yP(v)));
+  mctx2.strokeStyle='#00E5FF';mctx2.lineWidth=3;mctx2.lineJoin='round';mctx2.stroke();
+  marYrs.forEach((yr,i)=>{
+    mctx2.beginPath();mctx2.arc(xP(i),yP(marV[i]),5,0,Math.PI*2);mctx2.fillStyle='#00E5FF';mctx2.fill();
+    mctx2.fillStyle='rgba(74,122,155,.7)';mctx2.font='9px JetBrains Mono,monospace';mctx2.textAlign='center';mctx2.fillText(yr,xP(i),H-10);
+  });
+}
+drawMar(); window.addEventListener('resize',drawMar);
+
+// ══ 6. INCENDIOS ══
+const fireC=document.getElementById('fireChart'),fctx2=fireC.getContext('2d');
+const fireYrs=[2015,2016,2017,2018,2019,2020,2021,2022,2023];
+const fireV=[1820,2100,2450,1650,1380,1240,1890,2847,1560];
+function drawFire(){
+  const W=fireC.offsetWidth||500;fireC.width=W;fireC.height=300;
+  const H=300,pad={t:30,r:20,b:40,l:52};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const bW=(cW/fireYrs.length)*.55,bGap=cW/fireYrs.length;
+  fctx2.clearRect(0,0,W,H);
+  [0,1000,2000,3000].forEach(v=>{
+    const y=pad.t+cH-(v/3200)*cH;
+    fctx2.beginPath();fctx2.moveTo(pad.l,y);fctx2.lineTo(W-pad.r,y);
+    fctx2.strokeStyle='rgba(255,77,77,0.08)';fctx2.lineWidth=1;fctx2.stroke();
+    fctx2.fillStyle='rgba(255,77,77,.4)';fctx2.font='9px JetBrains Mono,monospace';
+    fctx2.textAlign='right';fctx2.fillText(v,pad.l-5,y+4);
+  });
+  fireV.forEach((v,i)=>{
+    const x=pad.l+i*bGap+(bGap-bW)/2,bH=(v/3200)*cH,y=pad.t+cH-bH;
+    const isMax=v===Math.max(...fireV);
+    const grad=fctx2.createLinearGradient(0,y,0,y+bH);
+    grad.addColorStop(0,isMax?'rgba(255,77,77,1)':'rgba(255,77,77,.5)');
+    grad.addColorStop(1,isMax?'rgba(255,77,77,.3)':'rgba(255,77,77,.05)');
+    fctx2.fillStyle=grad;fctx2.fillRect(x,y,bW,bH);
+    if(isMax){fctx2.fillStyle='#FF4D4D';fctx2.font='bold 11px JetBrains Mono,monospace';fctx2.textAlign='center';fctx2.fillText(v,x+bW/2,y-8);}
+    fctx2.fillStyle='rgba(255,77,77,.5)';fctx2.font='9px JetBrains Mono,monospace';fctx2.textAlign='center';fctx2.fillText(fireYrs[i],x+bW/2,H-10);
+  });
+}
+drawFire(); window.addEventListener('resize',drawFire);
+
+// ══ NAV ACTIVE ══
+const secs=document.querySelectorAll('section[id]');
+const navAs=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-200)cur=s.id;});
+  navAs.forEach(a=>{
+    const active=a.getAttribute('href')==='#'+cur;
+    a.classList.toggle('active', active);
+  });
+});
+</script>
+</body>
+</html>
